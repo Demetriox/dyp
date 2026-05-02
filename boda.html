@@ -991,8 +991,7 @@
 <!-- Video splash -->
 <div class="envelope-overlay" id="envelope-overlay">
   <video class="envelope-video" id="envelope-video" playsinline preload="auto">
-    <source src="openingcard.mov" type="video/quicktime">
-    <source src="openingcard.mov" type="video/mp4">
+    <source src="openingcard.mp4" type="video/mp4">
   </video>
   <span class="env-cta" id="env-cta">Toque para abrir</span>
 </div>
@@ -1458,7 +1457,18 @@
     // 1. Hide CTA, show and play the video
     envCta.classList.add('hidden');
     envelopeVideo.style.display = 'block';
-    envelopeVideo.play();
+
+    // Try unmuted first; if browser blocks it, retry muted
+    envelopeVideo.muted = false;
+    envelopeVideo.play().catch(() => {
+      envelopeVideo.muted = true;
+      envelopeVideo.play().catch(() => {
+        // Video completely failed — skip to content
+        envelopeOverlay.classList.add('opened');
+        document.body.classList.add('envelope-dismissed');
+        bgAudio.play().catch(() => {});
+      });
+    });
 
     // 2. When video ends, dismiss overlay and show content
     envelopeVideo.addEventListener('ended', () => {
@@ -1467,15 +1477,6 @@
 
       // 3. Start music
       bgAudio.play().catch(() => {});
-    });
-
-    // Fallback: if video fails, dismiss after 3s
-    envelopeVideo.addEventListener('error', () => {
-      setTimeout(() => {
-        envelopeOverlay.classList.add('opened');
-        document.body.classList.add('envelope-dismissed');
-        bgAudio.play().catch(() => {});
-      }, 500);
     });
   });
 
